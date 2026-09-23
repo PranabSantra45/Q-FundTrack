@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block title %}Donations - Q-FundTrack{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1">Donation Management</h2>
+        <p class="text-muted mb-0">Record and review donor contributions across active campaigns.</p>
+    </div>
+    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#newDonorModal">
+        <i class="bi bi-person-plus-fill me-1"></i> Register New Donor
+    </button>
+</div>
+
+<div class="row g-4">
+    <!-- Record Donation Form Card -->
+    <div class="col-lg-5">
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 fw-bold"><i class="bi bi-credit-card-2-front text-success me-2"></i>Record New Donation</h5>
+            </div>
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="create_donation">
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Select Donor <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            {{ donation_form.donor }}
+                            <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#newDonorModal" title="Add New Donor">
+                                <i class="bi bi-plus-lg"></i>
+                            </button>
+                        </div>
+                        <div class="form-text">Choose from registered donors or click + to add.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Select Campaign <span class="text-danger">*</span></label>
+                        {{ donation_form.campaign }}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Donation Amount (&#8377;) <span class="text-danger">*</span></label>
+                        {{ donation_form.amount }}
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-semibold">Payment Method</label>
+                            {{ donation_form.payment_method }}
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-semibold">Reference ID</label>
+                            {{ donation_form.reference }}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Notes / Purpose</label>
+                        {{ donation_form.notes }}
+                    </div>
+
+                    <button type="submit" class="btn btn-success w-100 py-2 fw-semibold">
+                        <i class="bi bi-check2-circle me-1"></i> Submit Donation Entry
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Transactions List -->
+    <div class="col-lg-7">
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 fw-bold"><i class="bi bi-journal-check text-primary me-2"></i>Recorded Donations Ledger</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive" style="max-height: 600px;">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light sticky-top">
+                            <tr>
+                                <th class="ps-3">Reference</th>
+                                <th>Donor & Campaign</th>
+                                <th>Method</th>
+                                <th>Amount</th>
+                                <th class="pe-3">Timestamp</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for d in donations %}
+                                <tr>
+                                    <td class="ps-3"><code class="fw-semibold">{{ d.reference }}</code></td>
+                                    <td>
+                                        <div class="fw-semibold text-dark">{{ d.donor.name }}</div>
+                                        <div class="text-muted small"><i class="bi bi-flag me-1"></i>{{ d.campaign.name }}</div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-secondary border">{{ d.get_payment_method_display }}</span>
+                                    </td>
+                                    <td class="fw-bold text-success">&#8377;{{ d.amount|floatformat:2 }}</td>
+                                    <td class="pe-3 text-muted small">{{ d.donation_date|date:"d M Y, h:i A" }}</td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-4 text-muted">No donations recorded yet.</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal to Register New Donor -->
+<div class="modal fade" id="newDonorModal" tabindex="-1" aria-labelledby="newDonorModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold" id="newDonorModalLabel"><i class="bi bi-person-plus-fill me-2"></i>Register New Donor</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="create_donor">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Full Name</label>
+                        {{ donor_form.name }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Email Address</label>
+                        {{ donor_form.email }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Phone Number</label>
+                        {{ donor_form.phone }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Address / City</label>
+                        {{ donor_form.address }}
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Save Donor</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
