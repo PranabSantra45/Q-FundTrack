@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}Q-FundTrack - Public Portal{% endblock %}
+
+{% block content %}
+<div class="row align-items-center py-4 mb-4 bg-white rounded-3 shadow-sm p-4 border">
+    <div class="col-lg-7">
+        <span class="badge bg-primary-subtle text-primary mb-2 px-3 py-2 fs-6">
+            <i class="bi bi-shield-check me-1"></i> Multi-Organization Cloud Platform
+        </span>
+        <h1 class="display-5 fw-bold text-dark mt-2 mb-3">
+            Empowering Nonprofits with Transparent Donation & Campaign Tracking
+        </h1>
+        <p class="lead text-muted mb-4">
+            Q-FundTrack provides independent charitable organizations with isolated workspace management, real-time fundraising progress tracking, and verifiable donor accountability.
+        </p>
+        <div class="d-flex flex-wrap gap-2">
+            {% if user.is_authenticated %}
+                <a href="{% url 'dashboard' %}" class="btn btn-primary btn-lg">
+                    <i class="bi bi-speedometer2 me-2"></i>Go to Organization Dashboard
+                </a>
+            {% else %}
+                <a href="{% url 'register_org' %}" class="btn btn-primary btn-lg">
+                    <i class="bi bi-building-add me-2"></i>Register Your Organization
+                </a>
+                <a href="{% url 'login' %}" class="btn btn-outline-dark btn-lg">
+                    <i class="bi bi-box-arrow-in-right me-2"></i>Staff Sign In
+                </a>
+            {% endif %}
+        </div>
+    </div>
+    <div class="col-lg-5 text-center mt-4 mt-lg-0">
+        <div class="card border-0 bg-light p-4 rounded-4 shadow-sm">
+            <h5 class="fw-bold text-secondary mb-3">Platform Impact Metrics</h5>
+            <div class="row g-3">
+                <div class="col-6">
+                    <div class="p-3 bg-white rounded-3 shadow-sm">
+                        <div class="display-6 fw-bold text-primary">{{ total_organizations }}</div>
+                        <div class="small text-muted">Registered NGOs</div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="p-3 bg-white rounded-3 shadow-sm">
+                        <div class="display-6 fw-bold text-success">{{ total_active_campaigns }}</div>
+                        <div class="small text-muted">Active Causes</div>
+                    </div>
+                </div>
+            </div>
+            <div class="alert alert-info mt-3 mb-0 small text-start">
+                <i class="bi bi-lock-fill me-1"></i>
+                <strong>Privacy Guaranteed:</strong> Detailed donor identities, contact data, and individual financial ledgers are strictly private to authenticated organization staff.
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Public Campaigns Showcase -->
+<div class="mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h3 class="fw-bold mb-0">Active Public Campaigns</h3>
+            <p class="text-muted small mb-0">Community campaigns currently raising funds across verified partner organizations.</p>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        {% for c in public_campaigns %}
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 border-0 shadow-sm rounded-3">
+                    <div class="card-body p-4 d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="badge bg-light text-primary border small">
+                                <i class="bi bi-building me-1"></i>{{ c.organization.name }}
+                            </span>
+                            <span class="badge bg-success-subtle text-success">Active</span>
+                        </div>
+                        <h5 class="fw-bold text-dark mt-2 mb-2">{{ c.name }}</h5>
+                        <p class="text-muted small flex-grow-1">{{ c.description|truncatewords:20 }}</p>
+
+                        <div class="bg-light p-3 rounded-2 mb-2">
+                            <div class="d-flex justify-content-between small text-muted mb-1">
+                                <span>Raised: <strong class="text-success">&#8377;{{ c.amount_raised|floatformat:2 }}</strong></span>
+                                <span>Goal: <strong>&#8377;{{ c.target_amount|floatformat:2 }}</strong></span>
+                            </div>
+                            <div class="progress mb-2">
+                                <div class="progress-bar bg-primary" role="progressbar" style="width: {{ c.progress_percentage }}%;"></div>
+                            </div>
+                            <div class="d-flex justify-content-between small text-muted">
+                                <span><strong>{{ c.progress_percentage }}%</strong> funded</span>
+                                <span>Ends: {{ c.end_date|date:"d M Y" }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div class="col-12 text-center py-5 text-muted bg-white rounded-3">
+                <i class="bi bi-flag fs-2 text-secondary"></i>
+                <p class="mt-2 mb-0">No public campaigns active at this time.</p>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

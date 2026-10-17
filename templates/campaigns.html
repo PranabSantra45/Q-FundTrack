@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 
-{% block title %}Campaigns - Q-FundTrack{% endblock %}
+{% block title %}Campaigns - {{ org.name }}{% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h2 class="fw-bold mb-1">Fundraising Campaigns</h2>
-        <p class="text-muted mb-0">View all nonprofit campaigns, milestones, and target fulfillment.</p>
+        <p class="text-muted mb-0">Manage causes and targets for <strong>{{ org.name }}</strong></p>
     </div>
     <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createCampaignModal">
         <i class="bi bi-plus-lg me-1"></i> Add New Campaign
@@ -20,7 +20,9 @@
             <div class="card h-100 border-0 shadow-sm rounded-3">
                 <div class="card-body p-4 d-flex flex-column">
                     <div class="d-flex justify-content-between align-items-start mb-2">
-                        <h5 class="fw-bold text-dark mb-0">{{ c.name }}</h5>
+                        <h5 class="fw-bold text-dark mb-0">
+                            <a href="{% url 'campaign_detail' c.pk %}" class="text-decoration-none text-dark">{{ c.name }}</a>
+                        </h5>
                         {% if c.status == 'ACTIVE' %}
                             <span class="badge bg-success">Active</span>
                         {% elif c.status == 'COMPLETED' %}
@@ -41,35 +43,43 @@
                             <span class="fw-bold text-dark">&#8377;{{ c.target_amount|floatformat:2 }}</span>
                         </div>
                         <div class="progress mb-2">
-                            <div class="progress-bar bg-primary" role="progressbar" style="width: {{ c.progress_percentage }}%;" aria-valuenow="{{ c.progress_percentage }}" aria-valuemin="0" aria-valuemax="100"></div>
+                            <div class="progress-bar bg-primary" role="progressbar" style="width: {{ c.progress_percentage }}%;"></div>
                         </div>
                         <div class="d-flex justify-content-between small text-muted">
-                            <span><strong>{{ c.progress_percentage }}%</strong> completed</span>
+                            <span><strong>{{ c.progress_percentage }}%</strong> funded</span>
                             <span>Remaining: &#8377;{{ c.remaining_amount|floatformat:2 }}</span>
                         </div>
                     </div>
 
-                    <div class="d-flex justify-content-between text-muted small border-top pt-3">
-                        <span><i class="bi bi-calendar-event me-1"></i>{{ c.start_date|date:"d M Y" }} - {{ c.end_date|date:"d M Y" }}</span>
-                        <span><i class="bi bi-people me-1"></i>{{ c.donor_count }} Donors</span>
+                    <div class="d-flex justify-content-between align-items-center text-muted small border-top pt-3">
+                        <span><i class="bi bi-calendar-event me-1"></i>{{ c.start_date|date:"d M Y" }}</span>
+                        <div class="d-flex gap-2">
+                            <a href="{% url 'campaign_detail' c.pk %}" class="btn btn-sm btn-outline-primary py-0">Details</a>
+                            {% if profile.is_admin or profile.role == 'FINANCE' %}
+                                <form method="post" action="{% url 'campaign_delete' c.pk %}" onsubmit="return confirm('Delete campaign: {{ c.name }}?');" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-danger py-0">Delete</button>
+                                </form>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     {% empty %}
-        <div class="col-12 text-center py-5 text-muted">
-            <p>No campaigns have been created yet.</p>
+        <div class="col-12 text-center py-5 text-muted bg-white rounded-3 shadow-sm">
+            <p class="mb-0">No campaigns created yet for {{ org.name }}.</p>
         </div>
     {% endfor %}
 </div>
 
 <!-- Modal to Add New Campaign -->
-<div class="modal fade" id="createCampaignModal" tabindex="-1" aria-labelledby="createCampaignModalLabel" aria-hidden="true">
+<div class="modal fade" id="createCampaignModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow">
             <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title fw-bold" id="createCampaignModalLabel"><i class="bi bi-flag-fill me-2"></i>Create New Campaign</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <h5 class="modal-title fw-bold"><i class="bi bi-flag-fill me-2"></i>Create Campaign for {{ org.name }}</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form method="post">
                 {% csrf_token %}
@@ -97,7 +107,7 @@
                         </div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Initial Status</label>
+                        <label class="form-label fw-semibold">Status</label>
                         {{ form.status }}
                     </div>
                 </div>

@@ -1,0 +1,30 @@
+
+# Python cache files
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+qfund_env/
+venv/
+.venv/
+
+# Local secrets
+.env
+.env.*
+!.env.example
+
+# Local databases and backups
+*.sqlite3
+*.sqlite3-*
+*.bak
+*.backup_*
+
+# Generated files
+staticfiles/
+media/
+
+# Editor and operating system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

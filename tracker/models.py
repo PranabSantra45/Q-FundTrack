@@ -1,7 +1,57 @@
 from django.db import models
+from django.contrib.auth.models import User
 from django.utils import timezone
 from django.db.models import Sum
+from django.core.exceptions import ValidationError
 from decimal import Decimal
+
+
+class Organization(models.Model):
+    name = models.CharField(max_length=200, help_text="Official name of the organization / NGO")
+    code = models.CharField(
+        max_length=50,
+        unique=True,
+        db_index=True,
+        help_text="Unique identifier code for the organization (e.g. HELP-AGE-IN)"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['name']
+        verbose_name = "Organization"
+        verbose_name_plural = "Organizations"
+
+    def __str__(self):
+        return f"{self.name} ({self.code})"
+
+
+class UserProfile(models.Model):
+    ROLE_CHOICES = [
+        ('ORG_ADMIN', 'Organization Admin'),
+        ('FINANCE', 'Finance'),
+        ('STAFF', 'Staff'),
+    ]
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='members')
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='STAFF')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['user__username']
+        verbose_name = "User Profile"
+        verbose_name_plural = "User Profiles"
+
+    def __str__(self):
+        return f"{self.user.username} ({self.get_role_display()} @ {self.organization.name})"
+
+    @property
+    def is_admin(self) -> bool:
+        return self.role == 'ORG_ADMIN' or self.user.is_superuser
+
+    @property
+    def is_finance(self) -> bool:
+        return self.role in ['ORG_ADMIN', 'FINANCE'] or self.user.is_superuser
 
 
 class Campaign(models.Model):
@@ -11,6 +61,14 @@ class Campaign(models.Model):
         ('PAUSED', 'Paused'),
     ]
 
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.CASCADE,
+        related_name='campaigns',
+        help_text="Organization owning this campaign",
+        null=True,
+        blank=True
+    )
     name = models.CharField(max_length=200, help_text="Name of the fundraising campaign")
     description = models.TextField(help_text="Detailed description of the campaign objectives")
     target_amount = models.DecimalField(max_digits=12, decimal_places=2, help_text="Fundraising goal in INR")
@@ -54,8 +112,16 @@ class Campaign(models.Model):
 
 
 class Donor(models.Model):
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.CASCADE,
+        related_name='donors',
+        help_text="Organization managing this donor record",
+        null=True,
+        blank=True
+    )
     name = models.CharField(max_length=150, help_text="Full name of the donor")
-    email = models.EmailField(unique=True, help_text="Primary contact email")
+    email = models.EmailField(help_text="Primary contact email")
     phone = models.CharField(max_length=20, blank=True, help_text="Contact phone number")
     address = models.TextField(blank=True, help_text="Physical or billing address")
     created_at = models.DateTimeField(auto_now_add=True)
@@ -64,6 +130,7 @@ class Donor(models.Model):
         ordering = ['name']
         verbose_name = "Donor"
         verbose_name_plural = "Donors"
+        unique_together = ('organization', 'email')
 
     def __str__(self):
         return f"{self.name} ({self.email})"
@@ -89,6 +156,14 @@ class Donation(models.Model):
         ('BANK_TRANSFER', 'Direct Bank Transfer / NEFT'),
     ]
 
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.CASCADE,
+        related_name='donations',
+        help_text="Organization owning this donation record",
+        null=True,
+        blank=True
+    )
     donor = models.ForeignKey(
         Donor,
         on_delete=models.CASCADE,
@@ -114,4 +189,16 @@ class Donation(models.Model):
 
     def __str__(self):
         return f"₹{self.amount} by {self.donor.name} to {self.campaign.name} [Ref: {self.reference}]"
+
+    def clean(self):
+        super().clean()
+        if self.donor_id and self.organization_id and self.donor.organization_id and self.donor.organization_id != self.organization_id:
+            raise ValidationError("Donor belongs to a different organization.")
+        if self.campaign_id and self.organization_id and self.campaign.organization_id and self.campaign.organization_id != self.organization_id:
+            raise ValidationError("Campaign belongs to a different organization.")
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
 

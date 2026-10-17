@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 
-{% block title %}Donations - Q-FundTrack{% endblock %}
+{% block title %}Donations - {{ org.name }}{% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h2 class="fw-bold mb-1">Donation Management</h2>
-        <p class="text-muted mb-0">Record and review donor contributions across active campaigns.</p>
+        <p class="text-muted mb-0">Record and review contributions for <strong>{{ org.name }}</strong></p>
     </div>
     <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#newDonorModal">
         <i class="bi bi-person-plus-fill me-1"></i> Register New Donor
@@ -26,18 +26,17 @@
                     <input type="hidden" name="action" value="create_donation">
 
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Select Donor <span class="text-danger">*</span></label>
+                        <label class="form-label fw-semibold">Select Donor ({{ org.code }}) <span class="text-danger">*</span></label>
                         <div class="input-group">
                             {{ donation_form.donor }}
-                            <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#newDonorModal" title="Add New Donor">
+                            <button class="btn btn-outline-secondary" type="button" data-bs-toggle="modal" data-bs-target="#newDonorModal">
                                 <i class="bi bi-plus-lg"></i>
                             </button>
                         </div>
-                        <div class="form-text">Choose from registered donors or click + to add.</div>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Select Campaign <span class="text-danger">*</span></label>
+                        <label class="form-label fw-semibold">Select Campaign ({{ org.code }}) <span class="text-danger">*</span></label>
                         {{ donation_form.campaign }}
                     </div>
 
@@ -70,7 +69,7 @@
         </div>
     </div>
 
-    <!-- Recent Transactions List -->
+    <!-- Ledger Table -->
     <div class="col-lg-7">
         <div class="card border-0 shadow-sm rounded-3">
             <div class="card-header bg-white py-3">
@@ -85,7 +84,7 @@
                                 <th>Donor & Campaign</th>
                                 <th>Method</th>
                                 <th>Amount</th>
-                                <th class="pe-3">Timestamp</th>
+                                <th class="pe-3 text-end">Action</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -100,11 +99,20 @@
                                         <span class="badge bg-light text-secondary border">{{ d.get_payment_method_display }}</span>
                                     </td>
                                     <td class="fw-bold text-success">&#8377;{{ d.amount|floatformat:2 }}</td>
-                                    <td class="pe-3 text-muted small">{{ d.donation_date|date:"d M Y, h:i A" }}</td>
+                                    <td class="pe-3 text-end">
+                                        {% if profile.is_admin or profile.role == 'FINANCE' %}
+                                            <form method="post" action="{% url 'donation_delete' d.pk %}" onsubmit="return confirm('Delete donation {{ d.reference }}?');" class="d-inline">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-sm btn-outline-danger py-0" title="Delete">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </form>
+                                        {% endif %}
+                                    </td>
                                 </tr>
                             {% empty %}
                                 <tr>
-                                    <td colspan="5" class="text-center py-4 text-muted">No donations recorded yet.</td>
+                                    <td colspan="5" class="text-center py-4 text-muted">No donations recorded for {{ org.name }} yet.</td>
                                 </tr>
                             {% endfor %}
                         </tbody>
@@ -116,12 +124,12 @@
 </div>
 
 <!-- Modal to Register New Donor -->
-<div class="modal fade" id="newDonorModal" tabindex="-1" aria-labelledby="newDonorModalLabel" aria-hidden="true">
+<div class="modal fade" id="newDonorModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow">
             <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title fw-bold" id="newDonorModalLabel"><i class="bi bi-person-plus-fill me-2"></i>Register New Donor</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <h5 class="modal-title fw-bold"><i class="bi bi-person-plus-fill me-2"></i>Register Donor for {{ org.name }}</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form method="post">
                 {% csrf_token %}
