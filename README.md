@@ -1,142 +1,576 @@
 
-cd ~/Q-FundTrack
+# Q-FundTrack
+### Multi-Organization Donation and Campaign Management System
 
-cat > README.md <<'EOF'
-# Q-FundTrack: Donation and Campaign Management System
+Q-FundTrack is a cloud-hosted web application designed to help nonprofit organizations manage fundraising campaigns, donor information, and donation records through a centralized platform.
 
-Q-FundTrack is a Django-based platform designed to help nonprofit organizations manage fundraising campaigns, donors, and donation records. It supports multiple organizations with role-based access control and organization-scoped data.
+The application is developed using **Python and Django** and deployed on **Amazon EC2**. It supports a multi-organization structure, allowing different organizations to manage their campaigns, donors, and donations within the same application.
 
-## 1. Features
+The current deployment uses **Amazon EC2, Gunicorn, systemd, and SQLite**. Integration with additional AWS services such as Amazon RDS, Amazon S3, and Amazon SNS is planned for future development.
 
-- Multi-organization workspaces.
-- Organization-scoped campaigns, donors, and donations.
-- Role-based access control for organization administrators, finance users, and staff.
-- Organization registration and onboarding.
-- Public homepage for showcasing campaigns.
-- Django administration.
-- Automated tests for organization isolation and access restrictions.
+---
 
-## 2. Technology Stack
+## Table of Contents
 
-- Python and Django
-- HTML, CSS, Bootstrap, and JavaScript
-- Django ORM
-- SQLite database in the current deployment
-- Gunicorn application server
-- Amazon EC2 for application hosting
-- systemd for managing the application service
+- [Project Overview](#project-overview)
+- [Key Features](#key-features)
+- [Technology Stack](#technology-stack)
+- [Application Architecture](#application-architecture)
+- [Multi-Organization Architecture](#multi-organization-architecture)
+- [AWS Deployment](#aws-deployment)
+- [AWS Deployment Screenshots](#aws-deployment-screenshots)
+- [Local Installation and Setup](#local-installation-and-setup)
+- [EC2 Deployment Management](#ec2-deployment-management)
+- [Configuration and Security](#configuration-and-security)
+- [Testing](#testing)
+- [Limitations and Future Enhancements](#limitations-and-future-enhancements)
+- [Project Structure](#project-structure)
+- [Repository](#repository)
 
-## 3. AWS Deployment Status
+---
 
-### Implemented
+## Project Overview
 
-- **Amazon EC2:** Hosts the Django application.
-- **Gunicorn:** Serves the Django WSGI application.
-- **systemd:** Manages the `qfundtrack.service` application service.
-- **Environment-based configuration:** The Django secret key is loaded from environment variables rather than hardcoded in the settings file.
-- **SQLite:** The current deployment uses SQLite for database storage.
+Nonprofit organizations regularly manage fundraising campaigns, donor information, and donation records. Maintaining these records manually or across multiple spreadsheets can make it difficult to organize information, monitor fundraising progress, and maintain consistency.
 
-### Planned or not yet verified
+Q-FundTrack addresses this problem by providing a centralized donation and campaign management platform.
 
-- **Amazon RDS:** Managed PostgreSQL database migration.
-- **Amazon S3:** Cloud storage for campaign images and receipts.
-- **Amazon SNS:** Notification delivery integration.
-- **Nginx and HTTPS:** Reverse proxy and TLS configuration, if not yet configured.
+The application enables organizations to:
 
-These services must not be considered implemented until their integrations have been configured and tested.
+- Create and manage fundraising campaigns.
+- Maintain donor information.
+- Record and track donations.
+- Associate campaigns, donors, and donations with their respective organizations.
+- Monitor fundraising targets and campaign progress.
+- Manage users with different responsibilities.
+- Access fundraising information through a centralized web application.
 
-## 4. Run Locally on Windows
+The system follows a multi-organization architecture, allowing multiple nonprofit organizations to use the same platform while maintaining organization-specific records.
 
-Open PowerShell in the project directory:
+## Key Features
 
-```powershell
-cd "C:\Users\Pranab Santra\Desktop\Projects\Qu-FundMe -- AWS Cloud"
+### 1. Campaign Management
+- Create and manage fundraising campaigns.
+- Maintain campaign descriptions and details.
+- Define fundraising targets.
+- Associate campaigns with specific organizations.
+- Monitor campaign progress based on recorded donations.
+
+### 2. Donor Management
+- Register and maintain donor information.
+- Organize donor records by organization.
+- Maintain donor details for fundraising activities.
+
+### 3. Donation Management
+- Record donations against fundraising campaigns.
+- Maintain donation details and receipt references.
+- Associate donations with the relevant organization.
+- Track donation records for campaign monitoring.
+
+### 4. Multi-Organization Support
+- Centralized organization management.
+- Organization-based user profiles.
+- Organization associations for campaigns, donors, and donations.
+- Organization-scoped data handling.
+
+### 5. User Roles and Access Management
+
+The application includes role-oriented access for different responsibilities:
+
+| Role | Responsibility |
+|---|---|
+| Admin | Administrative and management operations |
+| Finance | Donation and financial record management |
+| Staff | Day-to-day campaign and donor operations |
+
+### 6. User Registration and Authentication
+- User registration.
+- Login and authentication.
+- User profile management.
+- Organization-related onboarding structure.
+
+### 7. Public and Administrative Interfaces
+- Public-facing homepage.
+- User login and registration pages.
+- Django administration interface.
+- Application management through authenticated access.
+
+---
+
+## Technology Stack
+
+| Component | Technology |
+|---|---|
+| Programming Language | Python |
+| Backend Framework | Django |
+| Frontend | HTML, CSS, Bootstrap, JavaScript |
+| Database Access | Django ORM |
+| Current Database | SQLite |
+| Application Server | Gunicorn |
+| Cloud Platform | Amazon Web Services (AWS) |
+| Cloud Hosting | Amazon EC2 |
+| Operating System | Amazon Linux 2023 |
+| Process Management | systemd |
+| Version Control | Git and GitHub |
+
+### AWS Services
+
+| AWS Service | Status | Purpose |
+|---|---|---|
+| Amazon EC2 | Implemented | Hosting the Django application |
+| Gunicorn | Implemented | Running the Django application |
+| systemd | Implemented | Managing the application service |
+| SQLite | Currently used | Application database |
+| Amazon RDS | Planned | Managed relational database, preferably PostgreSQL |
+| Amazon S3 | Planned | File and document storage |
+| Amazon SNS | Planned | Notification services |
+| Nginx | Planned | Reverse proxy and web server |
+| HTTPS / SSL | Planned | Secure communication |
+
+---
+
+## Application Architecture
+
+### Current Architecture
+
+The current application follows this request flow:
+
+1. The user accesses the application through a web browser.
+2. The request reaches the Amazon EC2 instance.
+3. Gunicorn receives the request and forwards it to Django.
+4. Django processes the request and executes the application logic.
+5. Django ORM communicates with the SQLite database.
+6. The response is returned to the user's browser.
+
+```text
+             User Browser
+                  |
+                  |
+             HTTP Request
+                  |
+                  v
+          Amazon EC2 Instance
+          (Amazon Linux 2023)
+                  |
+                  v
+             Gunicorn
+          (WSGI Application)
+                  |
+                  v
+           Django Framework
+                  |
+                  v
+             SQLite DB
 ```
 
-Activate the existing virtual environment or use its Python executable:
+### Planned Future Architecture
 
-```powershell
-.\qfund_env\Scripts\python.exe -m pip install -r requirements.txt
-.\qfund_env\Scripts\python.exe manage.py migrate
-.\qfund_env\Scripts\python.exe manage.py runserver
+```text
+              User Browser
+                   |
+                   v
+              HTTPS / SSL
+                   |
+                   v
+                 Nginx
+                   |
+                   v
+              Amazon EC2
+                   |
+                   v
+             Gunicorn + Django
+                   |
+          +--------+--------+
+          |        |        |
+          v        v        v
+        Amazon   Amazon   Amazon
+         RDS      S3       SNS
+      (Database)(Storage)(Notifications)
 ```
 
-Open the application at:
+**Note:** The second architecture represents the intended future infrastructure. These additional AWS integrations are not yet verified as implemented.
 
-- Homepage: http://127.0.0.1:8000/
-- Login: http://127.0.0.1:8000/login/
-- Organization registration: http://127.0.0.1:8000/register/
-- Django administration: http://127.0.0.1:8000/admin/
+---
 
-## 5. Deploy on Amazon EC2
+## Multi-Organization Architecture
 
-The current EC2 deployment uses Gunicorn and the `qfundtrack.service` systemd service.
+Q-FundTrack follows an organization-based data model.
 
-General deployment workflow:
+The main components include:
 
-1. Provision an EC2 instance and install a compatible Python version.
-2. Clone the repository and create a virtual environment.
-3. Install application dependencies.
-4. Configure environment variables securely outside the repository.
-5. Run database migrations.
-6. Configure allowed hosts and production Django settings.
-7. Configure and start Gunicorn using systemd.
-8. Configure network access, a domain, HTTPS, and a reverse proxy as required.
-9. Verify the application and review server logs.
+| Model | Purpose |
+|---|---|
+| Organization | Stores organization information |
+| UserProfile | Associates user accounts with organizations |
+| Campaign | Stores fundraising campaign records |
+| Donor | Stores donor information |
+| Donation | Stores donation records |
 
-The actual server paths, environment-file location, security-group rules, and service configuration depend on the deployment environment. Never publish private keys, credentials, or production environment files.
+Campaign, Donor, and Donation records are associated with organizations through organization relationships.
 
-Useful service commands on the configured EC2 instance:
+A database migration was introduced to support the multi-organization structure and assign existing records to a default organization where applicable.
+
+**Default Organization**
+
+- Organization Name: `Global FundTrack NGO`
+- Organization Code: `DEFAULT-ORG`
+
+Organization-level data isolation must be enforced through application queries and authorization checks. Database relationships alone do not guarantee tenant isolation.
+
+---
+
+## AWS Deployment
+
+### Deployment Environment
+
+| Configuration | Details |
+|---|---|
+| Cloud Provider | AWS |
+| Service | Amazon EC2 |
+| Operating System | Amazon Linux 2023 |
+| Application Directory | `/home/ec2-user/Q-FundTrack` |
+| Linux User | `ec2-user` |
+| Python Environment | `.venv` |
+| Application Framework | Django |
+| Application Server | Gunicorn |
+| Process Manager | systemd |
+| Service Name | `qfundtrack.service` |
+| Application Port | `8000` |
+| Database | SQLite |
+
+### Implemented Deployment Components
+
+The application has been deployed to an Amazon EC2 instance.
+
+The deployment includes:
+
+- EC2 instance provisioning.
+- Amazon Linux 2023 environment.
+- Python virtual environment setup.
+- Django dependency installation.
+- Database migrations.
+- Gunicorn application server configuration.
+- systemd service configuration.
+- Environment-based Django secret key configuration.
+- Production configuration with `DEBUG = False`.
+- Application hosting on port `8000`.
+- Elastic IP association for a stable public IPv4 address.
+
+The Gunicorn service is managed using systemd, allowing the application process to be started, stopped, restarted, and monitored through Linux service management commands.
+
+### Application Service
+
+The systemd service is named:
+
+```bash
+qfundtrack.service
+```
+
+The application is configured to run using Gunicorn:
+
+```bash
+gunicorn --workers 2 --bind 0.0.0.0:8000 qfundtrack.wsgi:application
+```
+
+### Deployment Verification
+
+The following commands were used to verify the application deployment.
+
+**Check application service:**
 
 ```bash
 sudo systemctl status qfundtrack.service --no-pager
-sudo systemctl restart qfundtrack.service
-sudo journalctl -u qfundtrack.service -n 100 --no-pager
 ```
 
-## 6. Configuration and Security
+**Check Gunicorn listening port:**
 
-- Keep `SECRET_KEY` and other credentials in environment variables or a secure secrets manager.
-- Keep `DEBUG` disabled in production.
-- Configure `ALLOWED_HOSTS` for the actual deployment hostname or IP.
-- Do not commit `.env` files, database backups, private keys, virtual environments, or real donor data.
-- Change any default or demonstration passwords before deployment.
-- Use HTTPS and appropriate access controls for production use.
-- Review tenant isolation, authorization, database backups, and logging before handling real donor information.
+```bash
+sudo ss -lntp | grep ':8000'
+```
 
-## 7. Testing
+**Test application response locally on EC2:**
 
-Run the Django application tests:
+```bash
+curl -I --max-time 10 http://127.0.0.1:8000/
+```
+
+A successful HTTP response confirms that the application is responding locally on the EC2 instance.
+
+Public browser access also depends on the EC2 security group, Django `ALLOWED_HOSTS`, and the configured public IP address or domain.
+
+---
+
+## Local Installation and Setup
+
+### Prerequisites
+
+- Python 3.x
+- Git
+- pip
+- Windows, Linux, or macOS
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/PranabSantra45/Q-FundTrack.git
+```
+
+Navigate into the project directory:
+
+```bash
+cd Q-FundTrack
+```
+
+### 2. Create a Virtual Environment
+
+For Windows PowerShell:
+
+```powershell
+python -m venv qfund_env
+```
+
+Activate it:
+
+```powershell
+.\qfund_env\Scripts\Activate.ps1
+```
+
+For Linux or macOS:
+
+```bash
+python3 -m venv qfund_env
+source qfund_env/bin/activate
+```
+
+### 3. Install Dependencies
+
+```bash
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+### 4. Apply Database Migrations
+
+```bash
+python manage.py migrate
+```
+
+### 5. Start the Development Server
+
+```bash
+python manage.py runserver
+```
+
+Open the following URLs in your browser:
+
+| Page | URL |
+|---|---|
+| Homepage | http://15.135.13.178:8000/ |
+| Login | http://15.135.13.178:8000/login/ |
+| Registration | http://15.135.13.178:8000/register/ |
+| Django Admin | http://15.135.13.178:8000/admin/ |
+
+The Django development server is intended for local development and testing. The EC2 deployment uses Gunicorn managed through systemd.
+
+---
+
+## EC2 Deployment Management
+
+The following commands are used to manage the deployed application.
+
+### Navigate to the Application Directory
+
+```bash
+cd /home/ec2-user/Q-FundTrack
+```
+
+### Activate the Virtual Environment
+
+```bash
+source .venv/bin/activate
+```
+
+### Pull Latest Changes from GitHub
+
+```bash
+git pull origin main
+```
+
+### Install Updated Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### Apply Database Migrations
+
+```bash
+python manage.py migrate
+```
+
+### Restart the Application
+
+```bash
+sudo systemctl restart qfundtrack.service
+```
+
+### Check Application Status
+
+```bash
+sudo systemctl status qfundtrack.service --no-pager
+```
+
+### View Application Logs
+
+```bash
+sudo journalctl -u qfundtrack.service -n 50 --no-pager
+```
+
+### Test the Application
+
+```bash
+curl -I --max-time 10 http://127.0.0.1:8000/
+```
+
+---
+
+## Configuration and Security
+
+The application uses production-oriented Django configuration.
+
+### Important Configuration
+
+- `DEBUG = False` for the EC2 deployment.
+- `SECRET_KEY` is loaded using an environment variable.
+- `ALLOWED_HOSTS` is configured for permitted application hosts.
+- The EC2 security group controls inbound network access.
+- Application configuration and sensitive credentials are kept outside the Git repository.
+
+### Environment Configuration
+
+The EC2 deployment uses an environment file stored outside the project directory:
+
+```text
+/home/ec2-user/.qfundtrack.env
+```
+
+This file contains sensitive configuration and must never be committed to GitHub.
+
+### Security Recommendations
+
+Before using the application with real organizations and donor information:
+
+- Use strong administrator passwords.
+- Remove or change development credentials.
+- Review user roles and permissions.
+- Verify organization-level data isolation.
+- Restrict EC2 security group access.
+- Configure HTTPS/SSL.
+- Configure regular database backups.
+- Protect uploaded files and sensitive information.
+- Review application logs for accidental exposure of confidential data.
+
+---
+
+## Testing
+
+The tracker application can be tested using Django's test framework.
+
+Run:
 
 ```bash
 python manage.py test tracker
 ```
 
-The test suite should be run in the current environment before reporting test results. Tests for tenant isolation and role restrictions are important, but passing tests alone do not guarantee production security.
+A previous test execution reported:
 
-## 8. Limitations and Future Enhancements
-
-- Migration from SQLite to Amazon RDS PostgreSQL.
-- Integration with Amazon S3 for uploaded documents.
-- Integration with Amazon SNS or another notification provider.
-- Production email delivery configuration.
-- Payment gateway integration.
-- Additional deployment hardening, monitoring, backups, and HTTPS configuration.
-
-## 9. Project Repository
-
-GitHub: https://github.com/PranabSantra45/Q-FundTrack
-EOF
-
-### Run the Test Suite:
-```powershell
-.\qfund_env\Scripts\python manage.py test tracker
+```text
+Ran 11 tests
+OK
 ```
-**Output**: `Ran 11 tests in 36s ... OK` (11 passed, 0 failed).
+
+This is a historical test result. Run the test suite again after code changes to verify the current version.
 
 ---
 
-## 10. Known Limitations & Future Work
-- **AWS Deployment**: AWS EC2, RDS, S3, and SNS integrations are scheduled for Phase 2.
-- **Live Payment Gateway**: Transactions currently log receipt references; live payment gateways (e.g. Razorpay, Stripe) will be added in Phase 2.
-- **Email Delivery**: Standard console email backend is configured; production SMTP or AWS SES will be wired during cloud rollout.
+## Limitations and Future Enhancements
+
+The following improvements are planned for future development:
+
+| Feature | Current Status | Future Enhancement |
+|---|---|---|
+| Cloud Hosting | EC2 deployed | Improve production infrastructure |
+| Database | SQLite | Migrate to Amazon RDS PostgreSQL |
+| File Storage | Local/application storage | Integrate Amazon S3 |
+| Notifications | Not yet integrated with SNS | Integrate Amazon SNS |
+| Web Server | Gunicorn | Add Nginx reverse proxy |
+| HTTPS | Not yet verified | Configure SSL/TLS |
+| Payment Gateway | Receipt references maintained | Integrate Razorpay or Stripe |
+| Email Delivery | Development console backend | Configure SMTP or Amazon SES |
+| Monitoring | Basic service logs | Add monitoring and alerting |
+| Backup | Not yet fully configured | Implement automated backups |
+
+### Future Development Goals
+
+1. Migrate the database from SQLite to Amazon RDS.
+2. Integrate Amazon S3 for campaign banners, uploaded documents, and donation receipts.
+3. Integrate Amazon SNS for notifications.
+4. Configure Nginx and HTTPS for production access.
+5. Implement live payment gateway integration.
+6. Configure production email delivery.
+7. Improve monitoring, logging, and backup mechanisms.
+8. Perform additional security testing and authorization reviews.
+
+---
+
+## Project Structure
+
+```text
+Q-FundTrack/
+│
+├── manage.py
+├── requirements.txt
+├── README.md
+│
+├── qfundtrack/
+│   ├── settings.py
+│   ├── urls.py
+│   ├── asgi.py
+│   └── wsgi.py
+│
+├── tracker/
+│   ├── migrations/
+│   ├── models.py
+│   ├── views.py
+│   ├── urls.py
+│   ├── tests.py
+│   └── ...
+│
+└── docs/
+    └── aws-screenshots/
+```
+
+The structure represents the main Django project, application, and documentation directories. Additional files and folders may be present as development continues.
+
+---
+
+## Repository
+
+**Project Name:** Q-FundTrack  
+**Project Type:** Nonprofit Donation and Campaign Management System  
+**Backend:** Python, Django  
+**Frontend:** HTML, CSS, Bootstrap, JavaScript  
+**Cloud Platform:** Amazon Web Services  
+**Current Hosting:** Amazon EC2  
+**Current Database:** SQLite  
+
+### GitHub Repository
+
+[PranabSantra45/Q-FundTrack](https://github.com/PranabSantra45/Q-FundTrack)
+
+---
+
+<p align="center">
+  <b>Q-FundTrack</b><br>
+  Simplifying Donation and Campaign Management for Nonprofit Organizations.
+</p>
